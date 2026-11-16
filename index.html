@@ -499,6 +499,17 @@
                 .topbar strong {
                     flex: 1;
                 }
+                .topbar-brand {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    transition: opacity 0.2s;
+                    opacity: 1;
+                }
+                .topbar-brand.hidden {
+                    opacity: 0;
+                    pointer-events: none;
+                }
                 main {
                     padding: 72px 13px 20px;
                 }
@@ -525,8 +536,11 @@
     </head>
     <body>
         <div class="topbar">
-            <button class="hamburger" onclick="toggleMenu()">☰</button
-            ><span class="logo">📦</span><strong>Mijn Uitleenregister</strong>
+            <button class="hamburger" onclick="toggleMenu()">☰</button>
+            <div class="topbar-brand">
+                <span class="logo">📦</span
+                ><strong>Mijn Uitleenregister</strong>
+            </div>
         </div>
         <div class="layout">
             <aside class="sidebar" id="sidebar">
@@ -947,6 +961,7 @@
                 return `<span class="badge ${s}">${statusNames[s] || s}</span>`;
             }
             function showPage(name, btn) {
+                const isMobile = window.innerWidth <= 520;
                 document
                     .querySelectorAll(".page")
                     .forEach((x) => x.classList.remove("active"));
@@ -957,12 +972,24 @@
                         x.classList.toggle("active", x.dataset.page === name),
                     );
                 if (btn && btn.dataset.page) {
+                    document.getElementById("sidebar").classList.remove("open");
+                } else if (isMobile) {
+                    document.getElementById("sidebar").classList.add("open");
                 }
-                document.getElementById("sidebar").classList.remove("open");
                 renderAll();
             }
             function toggleMenu() {
-                document.getElementById("sidebar").classList.toggle("open");
+                const isMobile = window.innerWidth <= 520;
+                const menu = document.getElementById("sidebar");
+                const brand = document.querySelector(".topbar-brand");
+                const wasOpen = menu.classList.contains("open");
+                menu.classList.toggle("open");
+                const isSidebarOpen = menu.classList.contains("open");
+                if (isMobile) {
+                    brand.classList.toggle("hidden", !isSidebarOpen);
+                } else {
+                    brand.style.display = isSidebarOpen ? "none" : "flex";
+                }
             }
             function openModal(title, html) {
                 document.getElementById("modal-title").textContent = title;
@@ -1594,6 +1621,13 @@
                     categories: [...defaultCategories],
                 };
                 save();
+            }
+            function init() {
+                const isMobile = window.innerWidth <= 520;
+                const menu = document.getElementById("sidebar");
+                if (!isMobile) {
+                    menu.classList.add("open");
+                }
             }
             renderAll();
         </script>
