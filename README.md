@@ -90,4 +90,8 @@ Er zijn geen externe JavaScript\-frameworks of database nodig\.
 ```
 
 ## Licentie
+Dit project is beschikbaar onder de
 
+[PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/).
+
+Commercieel gebruik is niet toegestaan.
