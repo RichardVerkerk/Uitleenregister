@@ -125,6 +125,33 @@
                 max-width: 1250px;
                 min-width: 0;
             }
+            .banner {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 14px 16px;
+                color: var(--ink);
+                background: #fff8ed;
+                border: 1px solid rgba(242, 210, 75, 0.35);
+                border-radius: 12px;
+                box-shadow: 0 8px 24px rgba(18, 55, 42, 0.08);
+            }
+            .banner-icon {
+                color: #b45309;
+                font-size: 1.25rem;
+                line-height: 1;
+            }
+            .banner strong {
+                display: block;
+                margin-bottom: 2px;
+                font-size: 0.88rem;
+                font-weight: 800;
+            }
+            .banner span {
+                display: block;
+                color: var(--muted);
+                font-size: 0.82rem;
+            }
             .card {
                 background: var(--card);
                 border-radius: var(--radius);
@@ -650,6 +677,13 @@
                             ＋ Artikel toevoegen
                         </button>
                     </div>
+                    <div id="items-banner" class="banner">
+                        <span class="banner-icon">⚠</span>
+                        <div>
+                            <strong>Voeg eerst een artikel toe.</strong>
+                            <span>Je kunt geen artikelen uitlenen voordat er ten minste één artikel in je inventaris staat.</span>
+                        </div>
+                    </div>
                     <div class="card">
                         <div class="filters">
                             <input
@@ -1118,13 +1152,10 @@
                         (!itemId || i.id === itemId),
                 );
                 if (!choices.length) {
-                    alert(
-                        "Er zijn geen beschikbare artikelen om uit te lenen.",
-                    );
+                    showPage("items");
                     return;
                 }
                 if (!db.people.length) {
-                    alert("Voeg eerst een persoon toe.");
                     showPage("people");
                     return;
                 }
