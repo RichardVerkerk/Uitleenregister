@@ -87,6 +87,7 @@ Er zijn geen externe JavaScript\-frameworks of database nodig\.
 .
 ├── index.html
 └── README.md
+└── .gitignore
 ```
 
 ## Licentie
