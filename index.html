@@ -1003,7 +1003,11 @@
                 document
                     .querySelectorAll(".page")
                     .forEach((x) => x.classList.remove("active"));
-                document.getElementById("page-" + name).classList.add("active");
+                const page = document.getElementById("page-" + name);
+                if (page) {
+                    // ✅ Controleer eerst of element bestaat
+                    page.classList.add("active");
+                }
                 document
                     .querySelectorAll(".tabs button")
                     .forEach((x) =>
@@ -1286,20 +1290,27 @@
             }
             function updateLoan(e, id) {
                 e.preventDefault();
-                const l = db.loans.find((x) => x.id === id);
+                const l = db.loans.find((x) => String(x.id) === id); // ✅ Zorg dat id als string wordt vergeleken
+                if (!l) throw new Error("Uitleen niet gevonden"); // Extra validatie
+
                 l.personId = val("el-person");
                 l.loanDate = val("el-date");
                 l.dueDate = val("el-due");
                 l.note = val("el-note");
+
                 closeModal();
                 save();
+                renderAll(); // ✅ Roep renderAll aan na aanpassing
             }
             function val(id) {
-                return document.getElementById(id)?.value || "";
+                const el = document.getElementById(id);
+                if (!el) throw new Error(`Element "${id}" niet gevonden!`);
+                return el.value;
             }
             function isOverdue(l) {
+                const todayStr = new Date().toISOString().split("T")[0]; // Converteer vandaag naar "YYYY-MM-DD"
                 return (
-                    l.status === "loaned" && l.dueDate && l.dueDate < today()
+                    l.status === "loaned" && l.dueDate && l.dueDate < todayStr // Vergelijk als string
                 );
             }
             function renderAll() {
@@ -1409,7 +1420,7 @@
                           .map((i) => {
                               const s = itemStatus(i),
                                   l = activeLoan(i.id);
-                              return `<tr><td><strong>${esc(i.name)}</strong><div class="smalltext muted">${esc([i.brand, i.model].filter(Boolean).join(" "))}</div></td><td>${esc(i.category || "—")}</td><td>${esc(i.location || "—")}</td><td>${badge(s)}</td><td>${l ? esc(person(l.personId)?.name || "Onbekend") : "—"}</td><td><div class="actions">${s === "available" ? `<button class="btn small" onclick="openLoanModal('${i.id}')">Uitlenen</button>` : ""}<button class="btn secondary small" onclick="openItemModal('${i.id}')">Wijzig</button>${s === "maintenance" ? `<button class="btn secondary small" onclick="setItemState('${i.id}','')">Beschikbaar</button>` : ""}</div></td></tr>`;
+                              return `<tr><td><strong>${esc(i.name)}</strong><div class="smalltext muted">${esc([i.brand, i.model].filter(Boolean).join(" "))}${i.serial ? "<br />s/n: " + esc(i.serial) : ""}</div></td><td>${esc(i.category || "—")}</td><td>${esc(i.location || "—")}</td><td>${badge(s)}</td><td>${l ? esc(person(l.personId)?.name || "Onbekend") : "—"}</td><td><div class="actions">${s === "available" ? `<button class="btn small" onclick="openLoanModal('${i.id}')">Uitlenen</button>` : ""}<button class="btn secondary small" onclick="openItemModal('${i.id}')">Wijzig</button>${s === "maintenance" ? `<button class="btn secondary small" onclick="setItemState('${i.id}','')">Beschikbaar</button>` : ""}</div></td></tr>`;
                           })
                           .join("")}</tbody></table></div>`
                     : '<div class="empty">Geen artikelen gevonden. Voeg je eerste artikel toe.</div>';
