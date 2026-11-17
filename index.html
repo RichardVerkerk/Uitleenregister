@@ -708,11 +708,27 @@
                                 <option value="maintenance">
                                     In onderhoud
                                 </option>
-                                <option value="retired">Afgeschreven</option>
                                 <option value="missing">Vermist</option>
                             </select>
                         </div>
                         <div id="items-table"></div>
+                    </div>
+
+                    <h3>Afgeschreven artikelen</h3>
+                    <div class="card">
+                        <div class="filters">
+                            <input
+                                id="retired-item-search"
+                                placeholder="Zoek artikel, merk of serienummer…"
+                                oninput="renderItems()"
+                            /><select
+                                id="retired-item-category"
+                                onchange="renderItems()"
+                            >
+                                <option value="">Alle categorieën</option>
+                            </select>
+                        </div>
+                        <div id="retired-items-table"></div>
                     </div>
                 </section>
 
@@ -1316,6 +1332,7 @@
             function renderAll() {
                 renderDashboard();
                 renderItems();
+                renderRetiredItems();
                 renderPeople();
                 renderLoans();
                 renderHistory();
@@ -1412,7 +1429,8 @@
                                     .toLowerCase()
                                     .includes(q)) &&
                             (!cat || i.category === cat) &&
-                            (!st || itemStatus(i) === st),
+                            (!st || itemStatus(i) === st) &&
+                            itemStatus(i) !== "retired",
                     )
                     .sort((a, b) => a.name.localeCompare(b.name));
                 document.getElementById("items-table").innerHTML = rows.length
@@ -1424,6 +1442,38 @@
                           })
                           .join("")}</tbody></table></div>`
                     : '<div class="empty">Geen artikelen gevonden. Voeg je eerste artikel toe.</div>';
+            }
+            function renderRetiredItems() {
+                const q = (val("retired-item-search") || "").toLowerCase(),
+                    cat = val("retired-item-category");
+                const rows = db.items
+                    .filter(
+                        (i) =>
+                            (!q ||
+                                [
+                                    i.name,
+                                    i.brand,
+                                    i.model,
+                                    i.serial,
+                                    i.description,
+                                ]
+                                    .join(" ")
+                                    .toLowerCase()
+                                    .includes(q)) &&
+                            (!cat || i.category === cat) &&
+                            itemStatus(i) === "retired",
+                    )
+                    .sort((a, b) => a.name.localeCompare(b.name));
+                document.getElementById("retired-items-table").innerHTML =
+                    rows.length
+                        ? `<div class="table-wrap"><table><thead><tr><th>Artikel</th><th>Categorie</th><th>Locatie</th><th>Status</th><th>Uitgeleend aan</th><th>Acties</th></tr></thead><tbody>${rows
+                              .map((i) => {
+                                  const s = itemStatus(i),
+                                      l = activeLoan(i.id);
+                                  return `<tr><td><strong>${esc(i.name)}</strong><div class="smalltext muted">${esc([i.brand, i.model].filter(Boolean).join(" "))}${i.serial ? "<br />s/n: " + esc(i.serial) : ""}</div></td><td>${esc(i.category || "—")}</td><td>${esc(i.location || "—")}</td><td>${badge(s)}</td><td>${l ? esc(person(l.personId)?.name || "Onbekend") : "—"}</td><td><div class="actions">${s === "available" ? `<button class="btn small" onclick="openLoanModal('${i.id}')">Uitlenen</button>` : ""}<button class="btn secondary small" onclick="openItemModal('${i.id}')">Wijzig</button>${s === "maintenance" ? `<button class="btn secondary small" onclick="setItemState('${i.id}','')">Beschikbaar</button>` : ""}</div></td></tr>`;
+                              })
+                              .join("")}</tbody></table></div>`
+                        : '<div class="empty">Geen artikelen gevonden. Voeg je eerste artikel toe.</div>';
             }
             function setItemState(id, state) {
                 const i = item(id);
