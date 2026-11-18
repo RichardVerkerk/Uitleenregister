@@ -1,0 +1,18 @@
+{
+  "id": "./",
+  "name": "Mijn Uitleenregister",
+  "short_name": "Uitleenregister",
+  "description": "Persoonlijk register voor spullen die je uitleent en zelf leent.",
+  "lang": "nl-NL",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f5f7fa",
+  "theme_color": "#133d59",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
