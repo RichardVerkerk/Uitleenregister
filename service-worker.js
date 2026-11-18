@@ -1,4 +1,4 @@
-const CACHE_NAME = "mijn-uitleenregister-v3";
+const CACHE_NAME = "mijn-uitleenregister-v2";
 
 const APP_FILES = [
   "./manifest.json",
