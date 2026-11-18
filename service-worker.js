@@ -1,8 +1,6 @@
-const CACHE_NAME = "mijn-uitleenregister-v1";
+const CACHE_NAME = "mijn-uitleenregister-v2";
 
-const APP_SHELL = [
-  "./",
-  "./index.html",
+const APP_FILES = [
   "./manifest.json",
   "./icons/icon.svg",
   "./icons/icon-192.png",
@@ -11,108 +9,106 @@ const APP_SHELL = [
   "./icons/apple-touch-icon.png",
 ];
 
-// Installatie: sla de belangrijkste app-bestanden op.
+// Installeren: index.html moet altijd eerst worden opgeslagen.
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) =>
-      cache.addAll(APP_SHELL).catch((error) => {
-        console.warn(
-          "Niet alle app-bestanden konden worden opgeslagen:",
-          error,
-        );
-      }),
-    ),
-  );
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
 
-  self.skipWaiting();
+      // De startpagina is het belangrijkste bestand.
+      await cache.add("./index.html");
+
+      // Andere bestanden afzonderlijk proberen op te slaan.
+      await Promise.allSettled(APP_FILES.map((file) => cache.add(file)));
+
+      await self.skipWaiting();
+    })(),
+  );
 });
 
-// Activeer de nieuwe versie en verwijder oude caches.
+// Oude cache opruimen.
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(
-          keys
-            .filter(
-              (key) =>
-                key.startsWith("mijn-uitleenregister-") && key !== CACHE_NAME,
-            )
-            .map((key) => caches.delete(key)),
-        ),
-      ),
-  );
+    (async () => {
+      const keys = await caches.keys();
 
-  self.clients.claim();
+      await Promise.all(
+        keys
+          .filter(
+            (key) =>
+              key.startsWith("mijn-uitleenregister-") && key !== CACHE_NAME,
+          )
+          .map((key) => caches.delete(key)),
+      );
+
+      await self.clients.claim();
+    })(),
+  );
 });
 
-// Verwerk netwerkverzoeken.
+// Offline ondersteuning.
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
 
-  // Alleen verzoeken van dezelfde website verwerken.
-  if (url.origin !== self.location.origin) {
-    return;
-  }
+  if (url.origin !== self.location.origin) return;
+  if (request.method !== "GET") return;
 
-  // Pagina's: eerst het netwerk proberen.
-  // Bij geen internet wordt de opgeslagen versie gebruikt.
+  // Pagina's: eerst internet proberen, daarna de cache.
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response && response.ok) {
-            const copy = response.clone();
+      (async () => {
+        try {
+          const response = await fetch(request);
 
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put("./index.html", copy);
-            });
+          if (response.ok) {
+            const cache = await caches.open(CACHE_NAME);
+            await cache.put("./index.html", response.clone());
           }
 
           return response;
-        })
-        .catch(async () => {
-          return (
-            (await caches.match(request)) ||
-            (await caches.match("./index.html")) ||
-            new Response(
-              "Je bent offline en de app-pagina is nog niet opgeslagen.",
-              {
-                status: 503,
-                headers: {
-                  "Content-Type": "text/plain; charset=utf-8",
-                },
+        } catch (error) {
+          const cachedPage = await caches.match("./index.html");
+
+          if (cachedPage) return cachedPage;
+
+          return new Response(
+            "De app is nog niet offline opgeslagen. Open de app eerst met internetverbinding.",
+            {
+              status: 503,
+              headers: {
+                "Content-Type": "text/plain; charset=utf-8",
               },
-            )
+            },
           );
-        }),
+        }
+      })(),
     );
 
     return;
   }
 
-  // Andere bestanden: eerst de cache proberen.
-  if (request.method === "GET") {
-    event.respondWith(
-      caches.match(request).then((cached) => {
-        if (cached) {
-          return cached;
+  // Afbeeldingen, scripts en andere bestanden.
+  event.respondWith(
+    (async () => {
+      const cached = await caches.match(request);
+
+      if (cached) return cached;
+
+      try {
+        const response = await fetch(request);
+
+        if (response.ok) {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put(request, response.clone());
         }
 
-        return fetch(request).then((response) => {
-          if (response && response.ok) {
-            const copy = response.clone();
-
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, copy);
-            });
-          }
-
-          return response;
+        return response;
+      } catch (error) {
+        return new Response("Bestand niet offline beschikbaar.", {
+          status: 503,
         });
-      }),
-    );
-  }
+      }
+    })(),
+  );
 });

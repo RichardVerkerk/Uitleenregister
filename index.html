@@ -2221,5 +2221,30 @@
                 );
             }
         </script>
+        <script>
+            if ("serviceWorker" in navigator) {
+                window.addEventListener("load", async () => {
+                    try {
+                        const registration =
+                            await navigator.serviceWorker.register(
+                                "/Uitleenregister/service-worker.js",
+                                {
+                                    scope: "/Uitleenregister/",
+                                },
+                            );
+
+                        console.log(
+                            "Service worker actief:",
+                            registration.scope,
+                        );
+                    } catch (error) {
+                        console.error(
+                            "Service worker registratie mislukt:",
+                            error,
+                        );
+                    }
+                });
+            }
+        </script>
     </body>
 </html>
