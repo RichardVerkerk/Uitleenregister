@@ -1,4 +1,4 @@
-const CACHE_NAME = "mijn-uitleenregister-v2";
+const CACHE_NAME = "mijn-uitleenregister-v3";
 
 const APP_FILES = [
   "./manifest.json",
@@ -9,24 +9,27 @@ const APP_FILES = [
   "./icons/apple-touch-icon.png",
 ];
 
-// Installeren: index.html moet altijd eerst worden opgeslagen.
+const APP_URL = new URL("./", self.registration.scope);
+const INDEX_URL = new URL("index.html", APP_URL);
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE_NAME);
 
-      // De startpagina is het belangrijkste bestand.
-      await cache.add("./index.html");
+      // De startpagina moet succesvol worden opgeslagen.
+      await cache.add(INDEX_URL.href);
 
-      // Andere bestanden afzonderlijk proberen op te slaan.
-      await Promise.allSettled(APP_FILES.map((file) => cache.add(file)));
+      // Overige bestanden afzonderlijk opslaan.
+      await Promise.allSettled(
+        APP_FILES.map((file) => cache.add(new URL(file, APP_URL).href)),
+      );
 
       await self.skipWaiting();
     })(),
   );
 });
 
-// Oude cache opruimen.
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
@@ -46,7 +49,6 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Offline ondersteuning.
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
@@ -54,7 +56,9 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
   if (request.method !== "GET") return;
 
-  // Pagina's: eerst internet proberen, daarna de cache.
+  // Alleen verzoeken binnen de app-scope behandelen.
+  if (!url.href.startsWith(APP_URL.href)) return;
+
   if (request.mode === "navigate") {
     event.respondWith(
       (async () => {
@@ -63,12 +67,12 @@ self.addEventListener("fetch", (event) => {
 
           if (response.ok) {
             const cache = await caches.open(CACHE_NAME);
-            await cache.put("./index.html", response.clone());
+            await cache.put(INDEX_URL.href, response.clone());
           }
 
           return response;
         } catch (error) {
-          const cachedPage = await caches.match("./index.html");
+          const cachedPage = await caches.match(INDEX_URL.href);
 
           if (cachedPage) return cachedPage;
 
@@ -88,7 +92,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Afbeeldingen, scripts en andere bestanden.
   event.respondWith(
     (async () => {
       const cached = await caches.match(request);
