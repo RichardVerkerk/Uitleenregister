@@ -498,7 +498,7 @@
                     padding: 0 8px;
                 }
                 .sidebar .tabs {
-                    margin-top: 0;
+                    margin-top: 50px;
                 }
                 .modal {
                     padding: 18px;
@@ -648,8 +648,7 @@
         <div class="topbar">
             <button class="hamburger" onclick="toggleMenu()">☰</button>
             <div class="topbar-brand">
-                <span class="logo">📦</span
-                ><strong>Mijn Uitleenregister</strong>
+                <span class="logo"></span><strong>Mijn Uitleenregister</strong>
             </div>
         </div>
         <div class="layout">
@@ -1217,9 +1216,10 @@
             function toggleMenu() {
                 const isMobile = window.innerWidth <= 520;
                 const menu = document.getElementById("sidebar");
-                const brand = document.querySelector(".topbar-brand");
+                const brand = document.querySelector(".brand");
                 const wasOpen = menu.classList.contains("open");
                 menu.classList.toggle("open");
+
                 const isSidebarOpen = menu.classList.contains("open");
                 if (isMobile) {
                     brand.classList.toggle("hidden", isSidebarOpen);
